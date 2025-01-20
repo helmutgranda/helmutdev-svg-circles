@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Dynamic Cloud Stack</title>
-    
+
     <script>
       class CircleStack extends HTMLElement {
         static get observedAttributes() {
@@ -36,19 +36,21 @@
         render() {
           // Read attributes
           const count = parseInt(this.getAttribute('count') || '4', 10);
-          const color = this.getAttribute('color') || 'blue';
+          const color = this.getAttribute('color') || '#0d0';
 
-          // Calculate SVG width based on circle count (60px per circle)
-          const svgWidth = count * 40;
+          // Calculate SVG width based on circle count
+          const svgWidth = count * 40; 
           const svgHeight = 60; // A fixed height for this example
           const r = 20;         // Circle radius
 
           // Build circle elements
           let circles = '';
           for (let i = 0; i < count; i++) {
-            const cx = 30 + i * 30; // x-coord for circle center
-            const cy = 30;          // y-coord for circle center
-            circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" />`;
+            // Adjust spacing as desired:
+            // Here we use (30 + i*30) for x-coord
+            const cx = 30 + i * 30;
+            const cy = 30;          
+            circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}"></circle>`;
           }
 
           // Update the container in the Shadow DOM with the SVG
@@ -70,7 +72,7 @@
             <div>
               <h2>Dynamic "Cloud" Stack</h2>
               <!-- Our circle-stack component -->
-              <circle-stack id="circleStack" count="4" color="#0b0"></circle-stack>
+              <circle-stack id="circleStack" count="4" color="#0d0"></circle-stack>
 
               <div style="margin-top: 20px;">
                 <button id="addButton">Add Circle</button>
@@ -78,24 +80,36 @@
               </div>
 
               <div style="margin-top: 20px;">
-                <label for="colorInput">Circle Color:</label>
+                <label for="colorInput">Circle Color (Text):</label>
                 <input id="colorInput" type="text" value="#0d0" />
+              </div>
+
+              <div style="margin-top: 20px;">
+                <label for="colorPicker">Circle Color (Picker):</label>
+                <input id="colorPicker" type="color" value="#0d0" />
               </div>
             </div>
           `;
         }
 
         connectedCallback() {
-          // Once attached, set up event listeners
-          this.addButton = this.shadowRoot.querySelector('#addButton');
+          // Once attached, grab references to elements
+          this.addButton    = this.shadowRoot.querySelector('#addButton');
           this.removeButton = this.shadowRoot.querySelector('#removeButton');
-          this.colorInput = this.shadowRoot.querySelector('#colorInput');
-          this.circleStack = this.shadowRoot.querySelector('#circleStack');
+          this.colorInput   = this.shadowRoot.querySelector('#colorInput');
+          this.colorPicker  = this.shadowRoot.querySelector('#colorPicker');
+          this.circleStack  = this.shadowRoot.querySelector('#circleStack');
 
-          // Add listeners
+          // Set up event listeners
           this.addButton.addEventListener('click', () => this.addCircle());
           this.removeButton.addEventListener('click', () => this.removeCircle());
-          this.colorInput.addEventListener('change', (e) => this.changeColor(e));
+
+          // When user changes the text input
+          this.colorInput.addEventListener('change', (e) => this.updateColor(e.target.value));
+
+          // When user changes the color picker
+          // 'input' event fires as soon as the user picks a color
+          this.colorPicker.addEventListener('input', (e) => this.updateColor(e.target.value));
         }
 
         addCircle() {
@@ -104,16 +118,31 @@
         }
 
         removeCircle() {
-          let currentCount = parseInt(this.circleStack.getAttribute('count'), 10);
+          const currentCount = parseInt(this.circleStack.getAttribute('count'), 10);
           // Ensure we don't go below 1 circle
           if (currentCount > 1) {
             this.circleStack.setAttribute('count', currentCount - 1);
           }
         }
 
-        changeColor(event) {
-          const newColor = event.target.value;
+        /**
+         * Update the circles' color, and synchronize both the text input and color picker
+         */
+        updateColor(newColor) {
+          // Update the circle-stack attribute
           this.circleStack.setAttribute('color', newColor);
+
+          // Keep the text input in sync, if it differs
+          if (this.colorInput.value !== newColor) {
+            this.colorInput.value = newColor;
+          }
+
+          // Keep the color picker in sync, if it differs
+          if (this.colorPicker.value !== newColor) {
+            // If user typed something like "red", you could convert to a hex code.
+            // For simplicity, let's just assign whatever we have:
+            this.colorPicker.value = newColor;
+          }
         }
       }
 
