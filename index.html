@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dynamic Cloud creation</title>
+    
+    <script>
+      class CircleStack extends HTMLElement {
+        static get observedAttributes() {
+          return ['count', 'color'];
+        }
+
+        constructor() {
+          super();
+          // Attach a shadow root to isolate styles and markup
+          this.attachShadow({ mode: 'open' });
+
+          // Initial structure in the Shadow DOM
+          this.shadowRoot.innerHTML = `
+            <div id="container"></div>
+          `;
+        }
+
+        connectedCallback() {
+          // Render when connected to the DOM
+          this.render();
+        }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+          // Re-render if one of the observed attributes changes
+          if (oldValue !== newValue) {
+            this.render();
+          }
+        }
+
+        render() {
+          // Read attributes
+          const count = parseInt(this.getAttribute('count') || '4', 10);
+          const color = this.getAttribute('color') || 'blue';
+
+          // Calculate SVG width based on circle count (60px per circle)
+          const svgWidth = count * 40;
+          const svgHeight = 60; // A fixed height for this example
+          const r = 20;         // Circle radius
+
+          // Build circle elements
+          let circles = '';
+          for (let i = 0; i < count; i++) {
+            const cx = 30 + i * 30; // x-coord for circle center
+            const cy = 30;          // y-coord for circle center
+            circles += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${color}" />`;
+          }
+
+          // Update the container in the Shadow DOM with the SVG
+          this.shadowRoot.querySelector('#container').innerHTML = `
+            <svg width="${svgWidth}" height="${svgHeight}" style="border: 1px solid #ccc">
+              ${circles}
+            </svg>
+          `;
+        }
+      }
+
+      class CircleManager extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: 'open' });
+
+          // Template: Circle stack + controls
+          this.shadowRoot.innerHTML = `
+            <div>
+              <h2>Dynamic "Cloud" stack creation</h2>
+              <!-- Our circle-stack component -->
+              <circle-stack id="circleStack" count="4" color="#0b0"></circle-stack>
+
+              <div style="margin-top: 20px;">
+                <button id="addButton">Add Circle</button>
+                <button id="removeButton">Remove Circle</button>
+              </div>
+
+              <div style="margin-top: 20px;">
+                <label for="colorInput">Circle Color:</label>
+                <input id="colorInput" type="text" value="#0d0" />
+              </div>
+            </div>
+          `;
+        }
+
+        connectedCallback() {
+          // Once attached, set up event listeners
+          this.addButton = this.shadowRoot.querySelector('#addButton');
+          this.removeButton = this.shadowRoot.querySelector('#removeButton');
+          this.colorInput = this.shadowRoot.querySelector('#colorInput');
+          this.circleStack = this.shadowRoot.querySelector('#circleStack');
+
+          // Add listeners
+          this.addButton.addEventListener('click', () => this.addCircle());
+          this.removeButton.addEventListener('click', () => this.removeCircle());
+          this.colorInput.addEventListener('change', (e) => this.changeColor(e));
+        }
+
+        addCircle() {
+          const currentCount = parseInt(this.circleStack.getAttribute('count'), 10);
+          this.circleStack.setAttribute('count', currentCount + 1);
+        }
+
+        removeCircle() {
+          let currentCount = parseInt(this.circleStack.getAttribute('count'), 10);
+          // Ensure we don't go below 1 circle
+          if (currentCount > 1) {
+            this.circleStack.setAttribute('count', currentCount - 1);
+          }
+        }
+
+        changeColor(event) {
+          const newColor = event.target.value;
+          this.circleStack.setAttribute('color', newColor);
+        }
+      }
+
+      // Register the custom elements
+      customElements.define('circle-stack', CircleStack);
+      customElements.define('circle-manager', CircleManager);
+    </script>
+  </head>
+
+  <body>
+    <!-- Render our circle manager, which includes the circle stack -->
+    <circle-manager></circle-manager>
+  </body>
+</html>
